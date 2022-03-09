@@ -50,8 +50,8 @@ describe("Main Service", () => {
 	it("Checks properly signatures", async () => {
 		const amount = "29.0";
 		const from =
-			"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
-		const blockchainWallet = "0x69fd25b60da76afd10d8fc7306f10f2934fc4829";
+			"ban_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
+		const blockchainWallet = "0x69FD25B60Da76Afd10D8Fc7306f10f2934fC4829";
 		const signature =
 			"0x8b828450dbc98d25c13443f91338863bb319266d3d9e92fdf5e1eb4d9b241b85704dcabe560382790435510b33b2990057d3325fb992e9f29b5c9ffede6b5e121c";
 		const badSignature =
@@ -61,7 +61,7 @@ describe("Main Service", () => {
 			svc.checkSignature(
 				blockchainWallet,
 				signature,
-				`Swap ${amount} PAW for wPAW with PAW I deposited from my wallet "${from}"`
+				`Swap ${amount} BAN for wBAN with BAN I deposited from my wallet "${from}"`
 			)
 		).to.be.true;
 
@@ -69,7 +69,7 @@ describe("Main Service", () => {
 			svc.checkSignature(
 				"0x59fd25b60da76afd10d8fc7306f10f2934fc4828",
 				signature,
-				`Swap ${amount} PAW for wPAW with PAW I deposited from my wallet "${from}"`
+				`Swap ${amount} BAN for wBAN with BAN I deposited from my wallet "${from}"`
 			)
 		).to.be.false;
 
@@ -88,9 +88,9 @@ describe("Main Service", () => {
 		it("Checks that a PAW wallet can't be claimed multiple times by the same Blockchain user", async () => {
 			const pawWallet =
 				"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
-			const blockchainWallet = "0xec410E9F2756C30bE4682a7E29918082Adc12B55";
+			const blockchainWallet = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 			const signature =
-				"0x521c2e1ae5e12da983b4a30bba29a6af4a24317c9378b124f5f5c2b69d96e945082322939fbdd1d8c351c218485934bbd6c997ae6d4066cbf81a24321cf18f551c";
+				"0x2edce56eb0980a3473ec39d273502b25c5e3496b400d953dd4041bfe287b37b637331be1f386e011b7c607dd352209564746984f845566b16b23fa059b0f12bb1b";
 
 			pawWalletsBlacklist.isBlacklisted.resolves(undefined);
 			depositsService.hasClaim
@@ -121,14 +121,14 @@ describe("Main Service", () => {
 		it("Checks that a PAW wallet can't be claimed by two different users", async () => {
 			const pawWallet =
 				"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
-
-			const blockchainWallet1 = "0xec410E9F2756C30bE4682a7E29918082Adc12B55";
+			
+			const blockchainWallet1 = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 			const signature1 =
-				"0x521c2e1ae5e12da983b4a30bba29a6af4a24317c9378b124f5f5c2b69d96e945082322939fbdd1d8c351c218485934bbd6c997ae6d4066cbf81a24321cf18f551c";
+				"0x2edce56eb0980a3473ec39d273502b25c5e3496b400d953dd4041bfe287b37b637331be1f386e011b7c607dd352209564746984f845566b16b23fa059b0f12bb1b";
 
-			const blockchainWallet2 = "0x69FD25B60Da76Afd10D8Fc7306f10f2934fC4829";
+			const blockchainWallet2 = "0x71CB05EE1b1F506fF321Da3dac38f25c0c9ce6E1";
 			const signature2 =
-				"0x6e0306e2daf7a3c9581b3d57b79eb34aad1b713a6d4426d38e0681d7a54d6aab534a36d44cac890e17d45efb173768817d4cfcdd04259d7137039a4fb90264141c";
+				"0xf702b3dd369ed37c0ae626a73ac3945c24aa7781a43385560a554bc0e3e1f4123d46579354fa2364e58f8acb362799279f20c40c8feb772cfa148f8310b8931f1b";
 
 			pawWalletsBlacklist.isBlacklisted.resolves(undefined);
 			depositsService.hasClaim
@@ -160,14 +160,13 @@ describe("Main Service", () => {
 		it("Checks that a blacklisted PAW wallet can't be claimed", async () => {
 			const pawWallet =
 				"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
-			const blockchainWallet = "0xec410E9F2756C30bE4682a7E29918082Adc12B55";
+			const blockchainWallet = "0x71CB05EE1b1F506fF321Da3dac38f25c0c9ce6E1";
 			const signature =
-				"0x521c2e1ae5e12da983b4a30bba29a6af4a24317c9378b124f5f5c2b69d96e945082322939fbdd1d8c351c218485934bbd6c997ae6d4066cbf81a24321cf18f551c";
-
+				"0xf702b3dd369ed37c0ae626a73ac3945c24aa7781a43385560a554bc0e3e1f4123d46579354fa2364e58f8acb362799279f20c40c8feb772cfa148f8310b8931f1b";
+			
 			pawWalletsBlacklist.isBlacklisted
 				.withArgs(pawWallet)
 				.resolves({ address: pawWallet, alias: "CoinEx", type: "" });
-console.log(svc.claim(pawWallet, blockchainWallet, signature));
 			expect(await svc.claim(pawWallet, blockchainWallet, signature)).to.equal(
 				ClaimResponse.Blacklisted
 			);
@@ -257,10 +256,10 @@ console.log(svc.claim(pawWallet, blockchainWallet, signature));
 			const pawWallet =
 				"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
 
-			const blockchainWallet = "0xec410e9f2756c30be4682a7e29918082adc12b55";
+			const blockchainWallet = "0x71CB05EE1b1F506fF321Da3dac38f25c0c9ce6E1";
 			const signature =
-				"0x2bd2af61c6fb8672751ee7e22e9c477a5bd274ce56b7ebc8cb596d1a6abbf4c72bc3dd5c2015bb27f2d71b6fcfdae95cd9c22ba67108b0940ca166284f16d6891c";
-
+				"0x3d25329321cb9878a264d1230518f90bae5815c32fa7f79452d5b64cb0ae63dc539dc27f2b041809422d3f51c8868d2466149afc3266c6d91cd1a24dc80c46c71b";
+			
 			depositsService.getUserAvailableBalance
 				.withArgs(pawWallet)
 				.resolves(availableBalance);
@@ -337,13 +336,13 @@ console.log(svc.claim(pawWallet, blockchainWallet, signature));
 			const pawWallet =
 				"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
 
-			const blockchainWallet1 = "0xec410e9f2756c30be4682a7e29918082adc12b55";
+			const blockchainWallet1 = "0x71CB05EE1b1F506fF321Da3dac38f25c0c9ce6E1";
 			const signature1 =
-				"0x3931a99b23a5156661949e6f25ab12bb4f827dae7e17e7a54da28b5de517666130b4f639b99288118a1d5736a55a6b6bca833ab09fc1a2ca7164e2fe15deb1331b";
+				"0x88d58d40262cf9eb69398311d75ff7a8401679fabdf9c3acb25e6fcb3dd219054fb5a356b2d621f0015b04a9fc7e5d1357febb13f6f42e0de7e8a8ddbb96921c1b";
 
-			const blockchainWallet2 = "0x69FD25B60Da76Afd10D8Fc7306f10f2934fC4829";
+			const blockchainWallet2 = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 			const signature2 =
-				"0xf9960fcdc11388a841ab29a53e655fc1f5b117c77a00b4145eaafda24898ac3d20887765b5cd415b7a6bef3f665d5ce0478ad569888963eb889fd0b07ec85c7b1c";
+				"0xd739e62a9de5cf3178247c6f2cf908b7e8092d014be5899ab8aecd9ac9dd3a9a7ef1fd007eccde6bf4621dc05580e734b0227ed956d196ff3fae7817c71d8c3b1c";
 
 			depositsService.getUserAvailableBalance
 				.withArgs(pawWallet)
@@ -391,3 +390,17 @@ console.log(svc.claim(pawWallet, blockchainWallet, signature));
 		});
 	});
 });
+
+
+/*
+Used to create signed messages
+
+//let mnemonic = 'test test test test test test test test test test test junk';
+let mnemonic = "announce room limb pattern dry unit scale effort smooth jazz weasel alcohol";
+let wallet = ethers.Wallet.fromMnemonic(mnemonic);
+let message = `Swap -1 PAW for wPAW with PAW I deposited from my wallet "${pawWallet}"`;
+let flatSig = await wallet.signMessage(message);
+let address = wallet.address;
+console.log(flatSig);
+console.log(address);
+*/

@@ -33,7 +33,6 @@ class KirbyPawWalletsBlacklist implements PawWalletsBlacklist {
 		this.log.debug(
 			`Blacklist check for "${pawWallet}": ${JSON.stringify(result)}`
 		);
-		console.log(result);
 		return result;
 	}
 }

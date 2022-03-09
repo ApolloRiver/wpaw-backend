@@ -139,7 +139,6 @@ class Service {
 			this.log.warn(
 				`Can't claim "${pawWallet}. This is a blacklisted wallet linked to ${blacklisted.alias}`
 			);
-			console.log(ClaimResponse.Blacklisted);
 			return ClaimResponse.Blacklisted;
 		}
 		// check if the user already did the claim process

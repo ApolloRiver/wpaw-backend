@@ -373,7 +373,7 @@ class Paw {
 		}
 		// retreive hot wallet target ratio
 		const targetRatio = BigNumber.from(
-			config.PawUsersDepositsHotWalletToColdWalletRatio
+			parseFloat(config.PawUsersDepositsHotWalletToColdWalletRatio)
 		);
 		// compute how many BAN should be sent to cold wallet
 		let amount = amountAboveMinimum;
