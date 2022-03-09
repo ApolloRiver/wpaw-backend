@@ -21,7 +21,7 @@ import BlockchainScanQueue from "./services/queuing/BlockchainScanQueue";
 import RedisBlockchainScanQueue from "./services/queuing/RedisBlockchainScanQueue";
 import History from "./models/responses/History";
 import { CoinExPricer } from "./prices/CoinExPricer";
-import KirbyBananoWalletsBlacklist from "./services/KirbyBananoWalletsBlacklist";
+import KirbyPawWalletsBlacklist from "./services/KirbyPawWalletsBlacklist";
 
 const app: Application = express();
 // const sse: SSE = new SSE();
@@ -30,12 +30,12 @@ const PORT = 3000;
 const log: Logger = config.Logger.getChildLogger();
 
 const corsWhitelist = [
-	"https://bsc.banano.cc",
-	"https://polygon.banano.cc",
-	"https://fantom.banano.cc",
-	"https://bsc-testnet.banano.cc",
-	"https://polygon-testnet.banano.cc",
-	"https://fantom-testnet.banano.cc",
+	"https://bsc.paw.digital",
+	"https://polygon.paw.digital",
+	"https://fantom.paw.digital",
+	"https://bsc-testnet.paw.digital",
+	"https://polygon-testnet.paw.digital",
+	"https://fantom-testnet.paw.digital",
 	"http://localhost:8080",
 ];
 
@@ -69,44 +69,44 @@ const svc = new Service(
 	usersDepositsService,
 	processingQueue,
 	blockchainScanQueue,
-	new KirbyBananoWalletsBlacklist()
+	new KirbyPawWalletsBlacklist()
 );
 svc.start();
 
 app.get("/health", (req: Request, res: Response) => {
-	// TODO: check if connections to Banano node, Blockchain node and Redis node are okay!
+	// TODO: check if connections to Paw node, Blockchain node and Redis node are okay!
 	res.send({
 		status: "OK",
 	});
 });
 
-app.get("/deposits/ban/wallet", async (req: Request, res: Response) => {
+app.get("/deposits/paw/wallet", async (req: Request, res: Response) => {
 	res.send({
-		address: config.BananoUsersDepositsHotWallet,
+		address: config.PawUsersDepositsHotWallet,
 	});
 });
 
-app.get("/deposits/ban/:ban_wallet", async (req: Request, res: Response) => {
-	const banWallet = req.params.ban_wallet;
-	const balance = await svc.getUserAvailableBalance(banWallet);
+app.get("/deposits/paw/:paw_wallet", async (req: Request, res: Response) => {
+	const pawWallet = req.params.paw_wallet;
+	const balance = await svc.getUserAvailableBalance(pawWallet);
 	res.send({
 		balance: ethers.utils.formatEther(balance),
 	});
 });
 
-app.post("/withdrawals/ban", async (req: Request, res: Response) => {
+app.post("/withdrawals/paw", async (req: Request, res: Response) => {
 	// TODO: make sure all required parameters are sent!
 	const withdrawalRequest: WithdrawalRequest = req.body as WithdrawalRequest;
-	const banAmount: number = withdrawalRequest.amount;
-	const banWallet: string = withdrawalRequest.ban;
+	const pawAmount: number = withdrawalRequest.amount;
+	const pawWallet: string = withdrawalRequest.paw;
 	const blockchainWallet: string = withdrawalRequest.blockchain;
 	const signature: string = withdrawalRequest.sig;
 
-	log.info(`Withdrawing ${banAmount} BAN to ${banWallet}`);
+	log.info(`Withdrawing ${pawAmount} PAW to ${pawWallet}`);
 
-	await svc.withdrawBAN(
-		banWallet,
-		banAmount.toString(),
+	await svc.withdrawPAW(
+		pawWallet,
+		pawAmount.toString(),
 		blockchainWallet,
 		Date.now(),
 		signature
@@ -124,12 +124,12 @@ app.get("/withdrawals/pending", async (req: Request, res: Response) => {
 app.post("/claim", async (req: Request, res: Response) => {
 	// TODO: make sure all required parameters are sent!
 	const claimRequest: ClaimRequest = req.body as ClaimRequest;
-	const { banAddress, blockchainAddress, sig } = claimRequest;
+	const { pawAddress, blockchainAddress, sig } = claimRequest;
 	log.info(
-		`Check claim for ${banAddress} and ${blockchainAddress} with signature ${sig}`
+		`Check claim for ${pawAddress} and ${blockchainAddress} with signature ${sig}`
 	);
 	const result: ClaimResponse = await svc.claim(
-		banAddress,
+		pawAddress,
 		blockchainAddress,
 		sig
 	);
@@ -141,7 +141,7 @@ app.post("/claim", async (req: Request, res: Response) => {
 			break;
 		case ClaimResponse.Blacklisted:
 			res.status(403).send({
-				message: "This BAN wallet is blacklisted.",
+				message: "This PAW wallet is blacklisted.",
 			});
 			break;
 		case ClaimResponse.AlreadyDone:
@@ -152,7 +152,7 @@ app.post("/claim", async (req: Request, res: Response) => {
 		case ClaimResponse.InvalidOwner:
 			res.status(409).send({
 				message:
-					"This BAN wallet was already claimed by another Blockchain Address.",
+					"This PAW wallet was already claimed by another Blockchain Address.",
 			});
 			break;
 		case ClaimResponse.InvalidSignature:
@@ -167,18 +167,18 @@ app.post("/claim", async (req: Request, res: Response) => {
 app.post("/swap", async (req: Request, res: Response) => {
 	// TODO: make sure all required parameters are sent!
 	const swapRequest: SwapRequest = req.body as SwapRequest;
-	const banAmount: number = swapRequest.amount;
-	const banWallet: string = swapRequest.ban;
+	const pawAmount: number = swapRequest.amount;
+	const pawWallet: string = swapRequest.paw;
 	const blockchainWallet: string = swapRequest.blockchain;
 	const signature: string = swapRequest.sig;
 
 	log.debug(
-		`banAmount=${banAmount}, banWallet=${banWallet}, blockchainWallet=${blockchainWallet}, signature=${signature}`
+		`pawAmount=${pawAmount}, pawWallet=${pawWallet}, blockchainWallet=${blockchainWallet}, signature=${signature}`
 	);
 
-	await svc.swapToWBAN(
-		banWallet,
-		banAmount,
+	await svc.swapToWPAW(
+		pawWallet,
+		pawAmount,
 		blockchainWallet,
 		Date.now(),
 		signature
@@ -186,29 +186,29 @@ app.post("/swap", async (req: Request, res: Response) => {
 	res.status(201).send();
 });
 
-app.get("/history/:blockchain/:ban", async (req: Request, res: Response) => {
+app.get("/history/:blockchain/:paw", async (req: Request, res: Response) => {
 	const blockchainWallet = req.params.blockchain;
-	const banWallet = req.params.ban;
-	const history: History = await svc.getHistory(blockchainWallet, banWallet);
+	const pawWallet = req.params.paw;
+	const history: History = await svc.getHistory(blockchainWallet, pawWallet);
 	res.send(history);
 });
 
 app.get("/prices", async (req: Request, res: Response) => {
 	const [
-		banPrice,
+		pawPrice,
 		bnbPrice,
 		ethPrice,
 		maticPrice,
 		ftmPrice,
 	] = await Promise.all([
-		new CoinExPricer("BANUSDT").getPriceInUSD(),
+		new CoinExPricer("PAWUSDT").getPriceInUSD(),
 		new CoinExPricer("BNBUSDC").getPriceInUSD(),
 		new CoinExPricer("ETHUSDC").getPriceInUSD(),
 		new CoinExPricer("MATICUSDC").getPriceInUSD(),
 		new CoinExPricer("FTMUSDC").getPriceInUSD(),
 	]);
 	res.send({
-		ban: banPrice,
+		paw: pawPrice,
 		bnb: bnbPrice,
 		eth: ethPrice,
 		matic: maticPrice,
@@ -238,9 +238,9 @@ setInterval(
 	15_000
 );
 
-app.get("/events/:ban_wallet", async (req: Request, res: Response) => {
+app.get("/events/:paw_wallet", async (req: Request, res: Response) => {
 	const sse = req.app.get("sseManager");
-	const id = req.params.ban_wallet;
+	const id = req.params.paw_wallet;
 	sse.open(id, res);
 	req.on("close", () => {
 		sse.delete(id);
@@ -258,8 +258,8 @@ const jobListener: JobListener = {
 				result
 			)}`
 		);
-		if (result.banWallet) {
-			sseManager.unicast(result.banWallet, {
+		if (result.pawWallet) {
+			sseManager.unicast(result.pawWallet, {
 				id,
 				type: name,
 				data: result,
@@ -277,6 +277,6 @@ processingQueue.addJobListener(jobListener);
 
 app.listen(PORT, async () => {
 	console.log(
-		`⚡️[wBAN backend]: Server is running at http://localhost:${PORT}`
+		`⚡️[wPAW backend]: Server is running at http://localhost:${PORT}`
 	);
 });

@@ -9,13 +9,13 @@ import { BigNumber, ethers } from "ethers";
 import { Blockchain } from "../../src/Blockchain";
 import InvalidOwner from "../../src/errors/InvalidOwner";
 import InvalidSignatureError from "../../src/errors/InvalidSignatureError";
-import { Banano } from "../../src/Banano";
+import { Paw } from "../../src/Paw";
 import ProcessingQueue from "../../src/services/queuing/ProcessingQueue";
 import BlockchainScanQueue from "../../src/services/queuing/BlockchainScanQueue";
-import BananoUserWithdrawal from "../../src/models/operations/BananoUserWithdrawal";
+import PawUserWithdrawal from "../../src/models/operations/PawUserWithdrawal";
 import config from "../../src/config";
-import KirbyBananoWalletsBlacklist from "../../src/services/KirbyBananoWalletsBlacklist";
-import { BananoWalletsBlacklist } from "../../src/services/BananoWalletsBlacklist";
+import KirbyPawWalletsBlacklist from "../../src/services/KirbyPawWalletsBlacklist";
+import { PawWalletsBlacklist } from "../../src/services/PawWalletsBlacklist";
 
 const { expect } = chai;
 chai.use(sinonChai);
@@ -27,30 +27,30 @@ describe("Main Service", () => {
 	let processingQueue: sinon.StubbedInstance<ProcessingQueue>;
 	let blockchainScanQueue: sinon.StubbedInstance<BlockchainScanQueue>;
 	let blockchain: sinon.StubbedInstance<Blockchain>;
-	let banano: sinon.StubbedInstance<Banano>;
-	let bananoWalletsBlacklist: sinon.StubbedInstance<BananoWalletsBlacklist>;
+	let paw: sinon.StubbedInstance<Paw>;
+	let pawWalletsBlacklist: sinon.StubbedInstance<PawWalletsBlacklist>;
 
 	beforeEach(async () => {
 		depositsService = sinon.stubInterface<UsersDepositsService>();
 		processingQueue = sinon.stubInterface<ProcessingQueue>();
 		blockchainScanQueue = sinon.stubInterface<BlockchainScanQueue>();
 		blockchain = sinon.stubInterface<Blockchain>();
-		banano = sinon.stubInterface<Banano>();
-		bananoWalletsBlacklist = sinon.stubInterface<BananoWalletsBlacklist>();
+		paw = sinon.stubInterface<Paw>();
+		pawWalletsBlacklist = sinon.stubInterface<PawWalletsBlacklist>();
 		svc = new Service(
 			depositsService,
 			processingQueue,
 			blockchainScanQueue,
-			bananoWalletsBlacklist
+			pawWalletsBlacklist
 		);
 		svc.blockchain = blockchain;
-		svc.banano = banano;
+		svc.paw = paw;
 	});
 
 	it("Checks properly signatures", async () => {
 		const amount = "29.0";
 		const from =
-			"ban_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
+			"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
 		const blockchainWallet = "0x69fd25b60da76afd10d8fc7306f10f2934fc4829";
 		const signature =
 			"0x8b828450dbc98d25c13443f91338863bb319266d3d9e92fdf5e1eb4d9b241b85704dcabe560382790435510b33b2990057d3325fb992e9f29b5c9ffede6b5e121c";
@@ -61,7 +61,7 @@ describe("Main Service", () => {
 			svc.checkSignature(
 				blockchainWallet,
 				signature,
-				`Swap ${amount} BAN for wBAN with BAN I deposited from my wallet "${from}"`
+				`Swap ${amount} PAW for wPAW with PAW I deposited from my wallet "${from}"`
 			)
 		).to.be.true;
 
@@ -69,12 +69,12 @@ describe("Main Service", () => {
 			svc.checkSignature(
 				"0x59fd25b60da76afd10d8fc7306f10f2934fc4828",
 				signature,
-				`Swap ${amount} BAN for wBAN with BAN I deposited from my wallet "${from}"`
+				`Swap ${amount} PAW for wPAW with PAW I deposited from my wallet "${from}"`
 			)
 		).to.be.false;
 
 		await expect(
-			svc.processSwapToWBAN({
+			svc.processSwapToWPAW({
 				from,
 				amount: 10,
 				blockchainWallet,
@@ -84,43 +84,43 @@ describe("Main Service", () => {
 		).to.eventually.be.rejectedWith(InvalidSignatureError);
 	});
 
-	describe("Claims for BAN wallet", () => {
-		it("Checks that a BAN wallet can't be claimed multiple times by the same Blockchain user", async () => {
-			const banWallet =
-				"ban_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
+	describe("Claims for PAW wallet", () => {
+		it("Checks that a PAW wallet can't be claimed multiple times by the same Blockchain user", async () => {
+			const pawWallet =
+				"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
 			const blockchainWallet = "0xec410E9F2756C30bE4682a7E29918082Adc12B55";
 			const signature =
 				"0x521c2e1ae5e12da983b4a30bba29a6af4a24317c9378b124f5f5c2b69d96e945082322939fbdd1d8c351c218485934bbd6c997ae6d4066cbf81a24321cf18f551c";
 
-			bananoWalletsBlacklist.isBlacklisted.resolves(undefined);
+			pawWalletsBlacklist.isBlacklisted.resolves(undefined);
 			depositsService.hasClaim
-				.withArgs(banWallet, blockchainWallet)
+				.withArgs(pawWallet, blockchainWallet)
 				.onFirstCall()
 				.resolves(false)
 				.onSecondCall()
 				.resolves(true);
 			depositsService.hasPendingClaim
-				.withArgs(banWallet)
+				.withArgs(pawWallet)
 				.onFirstCall()
 				.resolves(false)
 				.onSecondCall()
 				.resolves(true);
 			depositsService.storePendingClaim
-				.withArgs(banWallet, blockchainWallet)
+				.withArgs(pawWallet, blockchainWallet)
 				.returns(Promise.resolve(true));
 
-			expect(await svc.claim(banWallet, blockchainWallet, signature)).to.equal(
+			expect(await svc.claim(pawWallet, blockchainWallet, signature)).to.equal(
 				ClaimResponse.Ok
 			);
-			expect(await svc.claim(banWallet, blockchainWallet, signature)).to.equal(
+			expect(await svc.claim(pawWallet, blockchainWallet, signature)).to.equal(
 				ClaimResponse.AlreadyDone
 			);
 			expect(depositsService.storePendingClaim).to.have.been.calledOnce;
 		});
 
-		it("Checks that a BAN wallet can't be claimed by two different users", async () => {
-			const banWallet =
-				"ban_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
+		it("Checks that a PAW wallet can't be claimed by two different users", async () => {
+			const pawWallet =
+				"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
 
 			const blockchainWallet1 = "0xec410E9F2756C30bE4682a7E29918082Adc12B55";
 			const signature1 =
@@ -130,45 +130,45 @@ describe("Main Service", () => {
 			const signature2 =
 				"0x6e0306e2daf7a3c9581b3d57b79eb34aad1b713a6d4426d38e0681d7a54d6aab534a36d44cac890e17d45efb173768817d4cfcdd04259d7137039a4fb90264141c";
 
-			bananoWalletsBlacklist.isBlacklisted.resolves(undefined);
+			pawWalletsBlacklist.isBlacklisted.resolves(undefined);
 			depositsService.hasClaim
-				.withArgs(banWallet, blockchainWallet1)
+				.withArgs(pawWallet, blockchainWallet1)
 				.resolves(false)
-				.withArgs(banWallet, blockchainWallet2)
+				.withArgs(pawWallet, blockchainWallet2)
 				.resolves(false);
 			depositsService.hasPendingClaim
-				.withArgs(banWallet)
+				.withArgs(pawWallet)
 				.onFirstCall()
 				.resolves(false)
 				.onSecondCall()
 				.resolves(true);
 			depositsService.storePendingClaim
-				.withArgs(banWallet, blockchainWallet1)
+				.withArgs(pawWallet, blockchainWallet1)
 				.returns(Promise.resolve(true));
 
 			expect(
-				await svc.claim(banWallet, blockchainWallet1, signature1)
+				await svc.claim(pawWallet, blockchainWallet1, signature1)
 			).to.equal(ClaimResponse.Ok);
 
 			expect(
-				await svc.claim(banWallet, blockchainWallet2, signature2)
+				await svc.claim(pawWallet, blockchainWallet2, signature2)
 			).to.equal(ClaimResponse.InvalidOwner);
 
 			expect(depositsService.storePendingClaim).to.have.been.calledOnce;
 		});
 
-		it("Checks that a blacklisted BAN wallet can't be claimed", async () => {
-			const banWallet =
-				"ban_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
+		it("Checks that a blacklisted PAW wallet can't be claimed", async () => {
+			const pawWallet =
+				"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
 			const blockchainWallet = "0xec410E9F2756C30bE4682a7E29918082Adc12B55";
 			const signature =
 				"0x521c2e1ae5e12da983b4a30bba29a6af4a24317c9378b124f5f5c2b69d96e945082322939fbdd1d8c351c218485934bbd6c997ae6d4066cbf81a24321cf18f551c";
 
-			bananoWalletsBlacklist.isBlacklisted
-				.withArgs(banWallet)
-				.resolves({ address: banWallet, alias: "CoinEx", type: "" });
-
-			expect(await svc.claim(banWallet, blockchainWallet, signature)).to.equal(
+			pawWalletsBlacklist.isBlacklisted
+				.withArgs(pawWallet)
+				.resolves({ address: pawWallet, alias: "CoinEx", type: "" });
+console.log(svc.claim(pawWallet, blockchainWallet, signature));
+			expect(await svc.claim(pawWallet, blockchainWallet, signature)).to.equal(
 				ClaimResponse.Blacklisted
 			);
 			expect(depositsService.storePendingClaim).to.not.have.been.called;
@@ -177,11 +177,11 @@ describe("Main Service", () => {
 
 	describe("Withdrawals", () => {
 		it("Checks if a negative withdrawal amount is rejected", async () => {
-			const banWallet =
-				"ban_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
+			const pawWallet =
+				"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
 			const blockchainWallet = "0xec410E9F2756C30bE4682a7E29918082Adc12B55";
-			const withdrawal: BananoUserWithdrawal = {
-				banWallet,
+			const withdrawal: PawUserWithdrawal = {
+				pawWallet,
 				amount: "-5",
 				blockchainWallet,
 				signature:
@@ -193,31 +193,31 @@ describe("Main Service", () => {
 				.withArgs(withdrawal)
 				.onFirstCall()
 				.resolves(false);
-			depositsService.isClaimed.withArgs(banWallet).resolves(true);
+			depositsService.isClaimed.withArgs(pawWallet).resolves(true);
 			depositsService.hasClaim
-				.withArgs(banWallet, blockchainWallet)
+				.withArgs(pawWallet, blockchainWallet)
 				.resolves(true);
 			depositsService.getUserAvailableBalance
-				.withArgs(banWallet)
+				.withArgs(pawWallet)
 				.resolves(ethers.utils.parseEther("200"));
-			banano.getBalance
-				.withArgs(config.BananoUsersDepositsHotWallet)
+			paw.getBalance
+				.withArgs(config.PawUsersDepositsHotWallet)
 				.resolves(ethers.utils.parseEther("100"));
 			// make the withdrawal...
 			await expect(
-				svc.processWithdrawBAN(withdrawal)
-			).to.eventually.be.rejectedWith("Can't withdraw negative amounts of BAN");
+				svc.processWithdrawPAW(withdrawal)
+			).to.eventually.be.rejectedWith("Can't withdraw negative amounts of PAW");
 			// ... and that no withdrawal was processed
-			expect(banano.sendBan).to.have.not.been.called;
+			expect(paw.sendPaw).to.have.not.been.called;
 			expect(depositsService.storeUserWithdrawal).to.have.not.been.called;
 		});
 
 		it("Checks if a big withdrawal is put in pending withdrawals", async () => {
-			const banWallet =
-				"ban_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
+			const pawWallet =
+				"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
 			const blockchainWallet = "0xec410E9F2756C30bE4682a7E29918082Adc12B55";
-			const withdrawal: BananoUserWithdrawal = {
-				banWallet,
+			const withdrawal: PawUserWithdrawal = {
+				pawWallet,
 				amount: "150",
 				blockchainWallet,
 				signature:
@@ -229,65 +229,65 @@ describe("Main Service", () => {
 				.withArgs(withdrawal)
 				.onFirstCall()
 				.resolves(false);
-			depositsService.isClaimed.withArgs(banWallet).resolves(true);
+			depositsService.isClaimed.withArgs(pawWallet).resolves(true);
 			depositsService.hasClaim
-				.withArgs(banWallet, blockchainWallet)
+				.withArgs(pawWallet, blockchainWallet)
 				.resolves(true);
 			depositsService.getUserAvailableBalance
-				.withArgs(banWallet)
+				.withArgs(pawWallet)
 				.resolves(ethers.utils.parseEther("200"));
-			banano.getBalance
-				.withArgs(config.BananoUsersDepositsHotWallet)
+			paw.getBalance
+				.withArgs(config.PawUsersDepositsHotWallet)
 				.resolves(ethers.utils.parseEther("100"));
 			// make the withdrawal...
-			await svc.processWithdrawBAN(withdrawal);
+			await svc.processWithdrawPAW(withdrawal);
 			// ... expect it to be added to the pending withdrawals queue
-			expect(processingQueue.addBananoUserPendingWithdrawal).to.have.been
+			expect(processingQueue.addPawUserPendingWithdrawal).to.have.been
 				.calledOnce;
 			// ... and that no withdrawal was processed
-			expect(banano.sendBan).to.have.not.been.called;
+			expect(paw.sendPaw).to.have.not.been.called;
 			expect(depositsService.storeUserWithdrawal).to.have.not.been.called;
 		});
 	});
 
-	describe("Swaps BAN->wBAN", () => {
-		it("Checks that a swap can't be done with negative BAN amount", async () => {
+	describe("Swaps PAW->wPAW", () => {
+		it("Checks that a swap can't be done with negative PAW amount", async () => {
 			const availableBalance = ethers.utils.parseEther("10");
 
-			const banWallet =
-				"ban_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
+			const pawWallet =
+				"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
 
 			const blockchainWallet = "0xec410e9f2756c30be4682a7e29918082adc12b55";
 			const signature =
 				"0x2bd2af61c6fb8672751ee7e22e9c477a5bd274ce56b7ebc8cb596d1a6abbf4c72bc3dd5c2015bb27f2d71b6fcfdae95cd9c22ba67108b0940ca166284f16d6891c";
 
 			depositsService.getUserAvailableBalance
-				.withArgs(banWallet)
+				.withArgs(pawWallet)
 				.resolves(availableBalance);
 			depositsService.hasClaim
-				.withArgs(banWallet, blockchainWallet)
+				.withArgs(pawWallet, blockchainWallet)
 				.resolves(true);
 
 			await expect(
-				svc.processSwapToWBAN({
-					from: banWallet,
+				svc.processSwapToWPAW({
+					from: pawWallet,
 					amount: -1,
 					blockchainWallet: blockchainWallet,
 					timestamp: Date.now(),
 					signature: signature,
 				})
-			).to.eventually.be.rejectedWith("Can't swap negative amounts of BAN");
+			).to.eventually.be.rejectedWith("Can't swap negative amounts of PAW");
 			expect(blockchain.createMintReceipt).to.not.have.been.called;
 		});
 	});
 
 	describe("Idempotence", () => {
 		it("Checks if a user withdrawal request is not processed twice", async () => {
-			const banWallet =
-				"ban_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
+			const pawWallet =
+				"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
 			const blockchainWallet = "0xec410E9F2756C30bE4682a7E29918082Adc12B55";
-			const withdrawal: BananoUserWithdrawal = {
-				banWallet,
+			const withdrawal: PawUserWithdrawal = {
+				pawWallet,
 				amount: "150",
 				blockchainWallet,
 				signature:
@@ -303,28 +303,28 @@ describe("Main Service", () => {
 				// reject it the second time
 				.onSecondCall()
 				.resolves(true);
-			depositsService.isClaimed.withArgs(banWallet).resolves(true);
+			depositsService.isClaimed.withArgs(pawWallet).resolves(true);
 			depositsService.hasClaim
-				.withArgs(banWallet, blockchainWallet)
+				.withArgs(pawWallet, blockchainWallet)
 				.resolves(true);
 			depositsService.getUserAvailableBalance
-				.withArgs(banWallet)
+				.withArgs(pawWallet)
 				.resolves(ethers.utils.parseEther("200"));
-			banano.getBalance
-				.withArgs(config.BananoUsersDepositsHotWallet)
+			paw.getBalance
+				.withArgs(config.PawUsersDepositsHotWallet)
 				.resolves(ethers.utils.parseEther("300"));
-			banano.sendBan.resolves(
+			paw.sendPaw.resolves(
 				"6E3EB2D376517C188D8E621A8326E73D3C36295B84634F0C16354C4DE6ABE0F3"
 			);
 			// call the service twice...
-			await svc.processWithdrawBAN(withdrawal);
+			await svc.processWithdrawPAW(withdrawal);
 			await expect(
-				svc.processWithdrawBAN(withdrawal)
+				svc.processWithdrawPAW(withdrawal)
 			).to.eventually.be.rejectedWith(
-				"Can't withdraw BAN as the transaction was already processed"
+				"Can't withdraw PAW as the transaction was already processed"
 			);
 			// ... and expect only one withdrawal
-			expect(banano.sendBan).to.have.been.calledOnce;
+			expect(paw.sendPaw).to.have.been.calledOnce;
 			// ... to make sure the transaction is not stored twice but once!
 			expect(depositsService.storeUserWithdrawal).to.have.been.calledOnce;
 		});
@@ -334,8 +334,8 @@ describe("Main Service", () => {
 		it("Checks that a swap can only be done from a valid claim", async () => {
 			const amount = ethers.utils.parseEther("10");
 
-			const banWallet =
-				"ban_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
+			const pawWallet =
+				"paw_1o3k8868n6d1679iz6fcz1wwwaq9hek4ykd58wsj5bozb8gkf38pm7njrr1o";
 
 			const blockchainWallet1 = "0xec410e9f2756c30be4682a7e29918082adc12b55";
 			const signature1 =
@@ -346,42 +346,42 @@ describe("Main Service", () => {
 				"0xf9960fcdc11388a841ab29a53e655fc1f5b117c77a00b4145eaafda24898ac3d20887765b5cd415b7a6bef3f665d5ce0478ad569888963eb889fd0b07ec85c7b1c";
 
 			depositsService.getUserAvailableBalance
-				.withArgs(banWallet)
+				.withArgs(pawWallet)
 				.resolves(amount);
 			depositsService.hasClaim
-				.withArgs(banWallet, blockchainWallet1)
+				.withArgs(pawWallet, blockchainWallet1)
 				.resolves(true)
-				.withArgs(banWallet, blockchainWallet2)
+				.withArgs(pawWallet, blockchainWallet2)
 				.resolves(false);
 			blockchain.createMintReceipt
 				.withArgs(blockchainWallet1, amount)
 				.resolves({
 					receipt: "0xCAFEBABE",
 					uuid: "123",
-					wbanBalance: BigNumber.from(0),
+					wpawBalance: BigNumber.from(0),
 				})
 				.withArgs(blockchainWallet2, amount)
 				.resolves({
 					receipt: "0xCAFEBABE",
 					uuid: "123",
-					wbanBalance: BigNumber.from(0),
+					wpawBalance: BigNumber.from(0),
 				});
 
 			// legit user should be able to swap
-			const { receipt, uuid, wbanBalance } = await svc.processSwapToWBAN({
-				from: banWallet,
+			const { receipt, uuid, wpawBalance } = await svc.processSwapToWPAW({
+				from: pawWallet,
 				amount: 10,
 				blockchainWallet: blockchainWallet1,
 				timestamp: Date.now(),
 				signature: signature1,
 			});
 			expect(receipt).to.equal("0xCAFEBABE");
-			expect(ethers.utils.formatEther(wbanBalance)).to.equal("0.0");
+			expect(ethers.utils.formatEther(wpawBalance)).to.equal("0.0");
 
 			// hacker trying to swap funds from a wallet he doesn't own should be able to do it
 			await expect(
-				svc.processSwapToWBAN({
-					from: banWallet,
+				svc.processSwapToWPAW({
+					from: pawWallet,
 					amount: 10,
 					blockchainWallet: blockchainWallet2,
 					timestamp: Date.now(),
