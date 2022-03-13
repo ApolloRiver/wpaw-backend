@@ -324,6 +324,11 @@ class Service {
 			receipt,
 			uuid
 		);
+		console.log('from:' + from);
+		console.log('blockchainWallet:' + blockchainWallet);
+		console.log('amount:' + amount);
+		console.log('receipt:' + receipt);
+		console.log('uuid:' + uuid);
 		return { receipt, uuid, wpawBalance };
 	}
 

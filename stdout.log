@@ -1,0 +1,20 @@
+yarn run v1.22.17
+$ nodemon src/app.ts
+[33m[nodemon] 2.0.15[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: ts,json[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+error Command failed with signal "SIGKILL".
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
+Node.js[2433649]: ../src/node.cc:765:void node::ResetStdio(): Assertion `!(err != 0) || (err == -1 && (*__errno_location ()) == 1)' failed.
+ 1: 0xb02ec0 node::Abort() [node]
+ 2: 0xb02f3e  [node]
+ 3: 0xac2ed4 node::ResetStdio() [node]
+ 4: 0x7f2175a1da27  [/lib/x86_64-linux-gnu/libc.so.6]
+ 5: 0x7f2175a1dbe0 on_exit [/lib/x86_64-linux-gnu/libc.so.6]
+ 6: 0xa43a1c  [node]
+ 7: 0xa88d93 node::Environment::Exit(int) [node]
+ 8: 0xd4a18e  [node]
+ 9: 0xd4b5af v8::internal::Builtin_HandleApiCall(int, unsigned long*, v8::internal::Isolate*) [node]
+10: 0x15e7959  [node]

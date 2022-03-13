@@ -108,6 +108,7 @@ class Blockchain {
 		const receipt = await this.wallet.signMessage(
 			ethers.utils.arrayify(payloadHash)
 		);
+		
 		const wpawBalance: BigNumber = await this.wPAW.balanceOf(address);
 		return {
 			receipt,

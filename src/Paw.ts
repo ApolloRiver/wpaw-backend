@@ -67,7 +67,7 @@ class Paw {
 			}
 		);
 
-		paw.setPawnodeApiUrl(config.PawRPCAPI);
+		paw.setPawNodeApiUrl(config.PawRPCAPI);
 		// check every minute if transactions were missed from the WebSockets API
 		if (config.PawPendingTransactionsThreadEnabled === true) {
 			cron.schedule("* * * * *", () => {
@@ -103,7 +103,7 @@ class Paw {
 		const receiver = notification.message.block.link_as_account;
 		const rawAmount = notification.message.amount;
 		const amount: BigNumber = BigNumber.from(
-			rawAmount.substring(0, rawAmount.length - 11)
+			rawAmount.substring(0, rawAmount.length - 9)
 		);
 		const timestamp = Date.now(); // TODO: replace this with local_timestamp from block_info
 		const { hash } = notification.message;
@@ -208,13 +208,13 @@ class Paw {
 					const { amount } = transaction;
 					const sender = transaction.source;
 					// if amount deposited is only made of RAW, receive them and rekt the user :)
-					if (amount.length < 11) {
+					if (amount.length < 9) {
 						// eslint-disable-next-line no-await-in-loop
 						await this.receiveTransaction(hash);
 						return;
 					}
 					const pawAmount: BigNumber = BigNumber.from(
-						amount.substring(0, amount.length - 11)
+						amount.substring(0, amount.length - 9)
 					);
 					const timestamp = Date.now(); // TODO: replace this with local_timestamp from block_info
 					// filter transactions sent by the users deposits wallets
@@ -371,10 +371,7 @@ class Paw {
 		if (amountAboveMinimum.lte(BigNumber.from(0))) {
 			return;
 		}
-		// retreive hot wallet target ratio
-		const targetRatio = BigNumber.from(
-			parseFloat(config.PawUsersDepositsHotWalletToColdWalletRatio)
-		);
+		
 		// compute how many BAN should be sent to cold wallet
 		let amount = amountAboveMinimum;
 		if (amountAboveMinimum.gt(deposit)) {
@@ -384,10 +381,15 @@ class Paw {
 		const rounded = Math.round(
 			Number.parseInt(ethers.utils.formatUnits(amount, 18), 10)
 		);
+		
+		// retreive hot wallet target ratio
+		const targetRatio = BigNumber.from(
+			100 - (parseFloat(config.PawUsersDepositsHotWalletToColdWalletRatio))
+		);
 		amount = ethers.utils.parseEther(rounded.toString());
 		this.log.debug(`Amount to split: ${ethers.utils.formatEther(amount)} BAN`);
 		const ONE_HUNDRED = BigNumber.from(100);
-		amount = ONE_HUNDRED.sub(targetRatio).mul(amount).div(ONE_HUNDRED);
+		amount = amount.div(ONE_HUNDRED).mul(targetRatio);
 		// check if amount is above zero
 		if (amount.eq(BigNumber.from(0))) {
 			return;
@@ -404,7 +406,7 @@ class Paw {
 		const rawAmount = await paw.getAccountBalanceRaw(wallet);
 		const balance: BigNumber =
 			rawAmount !== "0"
-				? BigNumber.from(rawAmount.substring(0, rawAmount.length - 11))
+				? BigNumber.from(rawAmount.substring(0, rawAmount.length - 9))
 				: BigNumber.from(0);
 		return balance;
 	}
@@ -421,11 +423,11 @@ class Paw {
 		const rawPending = rawBalances.pending;
 		const balance: BigNumber =
 			rawBalance !== "0"
-				? BigNumber.from(rawBalance.substring(0, rawBalance.length - 11))
+				? BigNumber.from(rawBalance.substring(0, rawBalance.length - 9))
 				: BigNumber.from(0);
 		const pending: BigNumber =
 			rawPending !== "0"
-				? BigNumber.from(rawPending.substring(0, rawPending.length - 11))
+				? BigNumber.from(rawPending.substring(0, rawPending.length - 9))
 				: BigNumber.from(0);
 		return balance.add(pending);
 	}

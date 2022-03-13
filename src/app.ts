@@ -26,7 +26,7 @@ import KirbyPawWalletsBlacklist from "./services/KirbyPawWalletsBlacklist";
 const app: Application = express();
 // const sse: SSE = new SSE();
 const sseManager = new SSEManager();
-const PORT = 3000;
+const PORT = 3050;
 const log: Logger = config.Logger.getChildLogger();
 
 const corsWhitelist = [
@@ -37,6 +37,7 @@ const corsWhitelist = [
 	"https://polygon-testnet.paw.digital",
 	"https://fantom-testnet.paw.digital",
 	"http://localhost:8080",
+	"http://213.239.194.182:8080"
 ];
 
 app.use(

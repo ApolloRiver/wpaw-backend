@@ -244,7 +244,6 @@ describe("Paw Service", () => {
 			const deposit = "0.01";
 			const sender = "paw_sender";
 			const amount: BigNumber = ethers.utils.parseEther(deposit);
-			console.log(ethers.utils.parseEther("0.01"));
 			const timestamp = Date.now();
 			const hash = "0xCAFEBABE";
 			depositsService.hasPendingClaim.withArgs(sender).resolves(true);
